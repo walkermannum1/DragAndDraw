@@ -2,17 +2,27 @@ package com.example.user.draganddraw;
 
 
 import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.PointF;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by guang on 2016/9/16.
  */
 public class BoxDrawingView extends View {
     private static final String TAG = "BoxDrawingView";
+
+    private Box mCurrentBox;
+    private List<Box> mBoxen = new ArrayList<>();
+    private Paint mBoxPaint;
+    private Paint mBackgroundPaint;
 
     //Used when creating the view in code
     public BoxDrawingView(Context context) {
@@ -22,8 +32,27 @@ public class BoxDrawingView extends View {
     //
     public BoxDrawingView(Context context, AttributeSet attr) {
         super(context,attr);
+
+        mBoxPaint = new Paint();
+        mBoxPaint.setColor(0x22ff0000);
+
+        mBackgroundPaint = new Paint();
+        mBackgroundPaint.setColor(0xfff8efe0);
     }
 
+    @Override
+    protected void onDraw(Canvas canvas) {
+        canvas.drawPaint(mBackgroundPaint);
+
+        for (Box box : mBoxen) {
+            float left = Math.min(box.getOrigin().x, box.getCurrent().x);
+            float right = Math.max(box.getOrigin().x, box.getCurrent().x);
+            float top = Math.min(box.getOrigin().y, box.getCurrent().y);
+            float bottom = Math.max(box.getOrigin().y, box.getCurrent().y);
+
+            canvas.drawRect(left, top, right, bottom, mBoxPaint);
+        }
+    }
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         PointF current = new PointF(event.getX(),event.getY());
@@ -32,15 +61,24 @@ public class BoxDrawingView extends View {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 action = "ACTION_DOWN";
+                //Reset Drawing state
+                mCurrentBox = new Box(current);
+                mBoxen.add(mCurrentBox);
                 break;
             case MotionEvent.ACTION_MOVE:
                 action = "MOVE";
+                if (mCurrentBox != null) {
+                    mCurrentBox.setCurrent(current);
+                    invalidate();
+                }
                 break;
             case MotionEvent.ACTION_UP:
                 action = "UP";
+                mCurrentBox = null;
                 break;
             case MotionEvent.ACTION_CANCEL:
                 action = "CANCEL";
+                mCurrentBox = null;
                 break;
         }
 
